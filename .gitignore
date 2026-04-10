@@ -1,0 +1,56 @@
+# --- Python ---
+.venv/
+venv/
+__pycache__/
+*.py[cod]
+*$py.class
+.Python
+*.so
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+*.egg-info/
+.eggs/
+dist/
+build/
+pip-wheel-metadata/
+
+# --- Jupyter / notebooks ---
+.ipynb_checkpoints/
+executed_notebooks/
+
+# --- Environment & secrets ---
+.env
+.env.*
+!.env.example
+
+# --- OS & editors ---
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/
+*.swp
+*~
+
+# --- Logs ---
+*.log
+
+# --- Large / local data (not pushed to GitHub) ---
+DATASET_ieee-cis-elliptic/**
+!DATASET_ieee-cis-elliptic/README.md
+
+processed_data/**
+!processed_data/README.md
+
+# Generated plot binaries
+reports/figures/**
+!reports/figures/README.md
+
+# Large PDFs (keep markdown / LaTeX in REPORT/)
+Lit_Review/**/*.pdf
+REPORT/**/*.pdf
+ML_Report.pdf
+Ref/**/*.pdf
+
+# Optional: uncomment to ignore all local PDFs
+# *.pdf

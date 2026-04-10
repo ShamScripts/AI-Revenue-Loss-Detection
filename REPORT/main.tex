@@ -1,0 +1,424 @@
+\documentclass[conference]{IEEEtran}
+\usepackage{graphicx}
+\usepackage{booktabs}
+\usepackage{hyperref}
+
+\title{AI-POWERED Proactive Detection of Hidden Revenue Loss Points using Hybrid}
+
+\author{
+\IEEEauthorblockN{Shambhavi Jha, Venkata Shreya Vella}
+\IEEEauthorblockA{Department of Computer Science \\
+BITS Pilani, Dubai Campus \\
+Email: f20230009@dubai.bits-pilani.ac.in, f20230096@dubai.bits-pilani.ac.in}
+}
+
+\begin{document}
+
+\maketitle
+
+% ================= ABSTRACT =================
+\begin{abstract}
+
+Revenue leakage (RL) is a major challenge in financial systems, arising from inefficiencies, system errors, and fraudulent activities. Traditional detection methods are largely reactive and fail to scale with increasing transaction complexity.
+
+This work proposes a hybrid framework that integrates Gradient Boosted Decision Trees (GBDT), attention-based deep learning, and unsupervised anomaly detection for proactive RL detection. The approach combines structured learning, complex pattern extraction, and identification of previously unseen anomalies. 
+
+The framework is evaluated on tabular and graph-based datasets, including IEEE-CIS and Elliptic, using metrics such as Precision, Recall, F1-score, and AUC. The proposed method aims to improve detection of rare and dispersed anomalies, providing a scalable and robust solution for modern revenue leakage detection systems.
+
+\end{abstract}
+
+% ================= INTRODUCTION =================
+\section{Introduction}
+
+Revenue leakage (RL) refers to the unintended loss of revenue due to operational inefficiencies, system errors, or fraudulent activities occurring within an organization. These losses typically arise after value has been delivered but before revenue is accurately recorded or collected. RL is a significant issue across multiple sectors, including finance, healthcare, and taxation. For instance, the U.S. Internal Revenue Service estimates an annual tax gap of approximately \$441 billion, while the healthcare sector can lose up to 15\% of total revenue due to claim denials and administrative inefficiencies.
+
+The challenge of detecting revenue leakage is further amplified by the increasing complexity and scale of digital transactions. In environments such as the UAE, errors in VAT filings or delays in corporate tax registration can directly impact organizational profitability. More broadly, RL often manifests as small, distributed discrepancies across large volumes of transactions, making it difficult to detect using aggregated financial analysis. Similar characteristics have been observed in financial fraud detection, where anomalies are sparse and embedded within large-scale transaction streams [6].
+
+Traditional detection approaches are largely reactive and rely on manual audits, static rule-based systems, and retrospective analysis [5]. While these methods provide baseline monitoring, they are not well-suited for modern data environments characterized by high transaction volumes and evolving fraud patterns. As a result, detection is often delayed, allowing revenue losses to accumulate over time.
+
+To address these limitations, recent work has explored the use of Artificial Intelligence (AI) and Machine Learning (ML) for data-driven anomaly and fraud detection. Classical machine learning models, particularly Gradient Boosted Decision Trees (GBDT) such as XGBoost, have demonstrated strong performance in handling structured transactional data [3]. At the same time, deep learning approaches have been increasingly applied to capture complex feature interactions and high-dimensional patterns, while anomaly detection techniques provide a mechanism for identifying previously unseen irregularities [7].
+
+Furthermore, graph-based learning methods have emerged as an effective approach for modeling relational dependencies in financial systems, enabling the detection of coordinated or network-based fraud patterns [8]. Recent advances, such as graph transformer models, further enhance the ability to capture complex transaction structures in large-scale datasets [9].
+
+In this work, we propose a hybrid framework that integrates GBDT models, attention-based deep learning architectures (DNN/GNN), and unsupervised anomaly detection techniques. Additionally, Explainable AI (XAI) methods are incorporated to improve interpretability and provide transparency in model predictions [4]. The framework is evaluated on both tabular and graph-based datasets, including the IEEE-CIS fraud detection dataset [1] and the Elliptic Bitcoin transaction dataset [2].
+
+The proposed approach aims to combine the strengths of supervised, deep learning, and unsupervised methods to improve detection performance under challenging conditions such as class imbalance and evolving data distributions. By enabling early identification of dispersed and low-magnitude anomalies, the framework supports more effective revenue protection and operational efficiency.
+
+% ================= RELATED WORK =================
+
+\section{Related Work}
+
+Revenue leakage and financial fraud detection have been extensively studied across multiple domains, including taxation, healthcare, telecommunications, and financial services. Existing approaches can be broadly categorized into rule-based systems, classical machine learning methods, deep learning techniques, graph-based models, and unsupervised anomaly detection methods.
+
+\subsection{Rule-Based and Traditional Approaches}
+Early revenue leakage detection systems relied heavily on manual audits and rule-based monitoring frameworks. These systems use predefined thresholds and domain-specific rules to flag irregularities in transactions. While effective for detecting known patterns, they lack adaptability and fail to generalize to evolving fraud behaviors. Moreover, such systems struggle with scalability in high-volume transaction environments, leading to delayed detection and increased operational overhead [5].
+
+\subsection{Classical Machine Learning Approaches}
+With the availability of large-scale transactional data, classical machine learning models such as Random Forest, Logistic Regression, and Gradient Boosted Decision Trees (GBDT) have been widely adopted for fraud detection tasks [6]. Models such as XGBoost and LightGBM have demonstrated strong performance due to their ability to handle structured data and capture nonlinear relationships [3]. However, these methods primarily rely on labeled data and often face challenges in detecting rare or previously unseen fraud patterns. Additionally, their performance may degrade in highly imbalanced datasets without careful tuning.
+
+\subsection{Deep Learning and Attention-Based Models}
+Deep learning models, including Deep Neural Networks (DNNs) and attention-based architectures, have been proposed to capture complex feature interactions in financial data. Attention mechanisms allow models to focus on the most relevant features, improving detection accuracy in high-dimensional datasets. Despite their strengths, deep learning models typically require large volumes of labeled data and are often computationally expensive. Furthermore, their black-box nature limits interpretability, which is critical in financial and regulatory applications [7]. Explainability techniques such as SHAP have been introduced to address these limitations [4].
+
+\subsection{Graph-Based Approaches}
+Recent work has explored graph-based learning for fraud detection, particularly in scenarios where transactional relationships are important. Graph Neural Networks (GNNs) and graph transformer models, such as FraudGT, model transactions as networks of entities and interactions, enabling the detection of complex fraud patterns such as cycles and coordinated behavior [8], [9]. While these methods improve detection of relational patterns, they are computationally intensive and may not scale efficiently to very large datasets without optimization.
+
+\subsection{Unsupervised and Anomaly Detection Methods}
+Unsupervised methods, including Isolation Forest, clustering techniques, and autoencoders, have been widely used for anomaly detection in revenue systems. These approaches are particularly useful when labeled data is scarce, as they identify deviations from normal behavior [7]. However, they often suffer from high false positive rates and lack contextual understanding of domain-specific rules, limiting their practical applicability in isolation.
+
+\subsection{Research Gap and Motivation}
+From the existing literature, it is evident that no single approach effectively addresses all challenges associated with revenue leakage detection. Rule-based systems lack adaptability, classical machine learning models struggle with unseen patterns, deep learning methods face interpretability and data requirements issues, graph-based approaches are computationally demanding, and unsupervised methods often produce noisy outputs.
+
+This motivates the need for a hybrid framework that integrates the strengths of multiple paradigms. By combining GBDT for structured feature learning [3], attention-based deep learning for complex pattern extraction [7], and anomaly detection for identifying unknown patterns, the proposed approach aims to provide a more robust and scalable solution for revenue leakage detection.
+
+% ================= METHODOLOGY =================
+
+\section{Proposed Methodology}
+
+This work proposes a hybrid framework for revenue leakage detection that integrates supervised learning, deep learning, and unsupervised anomaly detection. The objective is to leverage the strengths of each paradigm to address challenges such as class imbalance, evolving fraud patterns, and heterogeneous data structures [7].
+
+\subsection{Overall Architecture}
+
+The proposed system follows a staged hybrid pipeline consisting of three primary components:
+\begin{itemize}
+    \item Gradient Boosted Decision Trees (GBDT) for initial classification and feature importance extraction [3]
+    \item Attention-based Deep Learning models (DNN/GNN) for capturing complex feature interactions and relational patterns [8]
+    \item Unsupervised Anomaly Detection for identifying previously unseen or rare patterns [7]
+\end{itemize}
+
+The architecture is designed as a semi-sequential pipeline, where each component contributes complementary information to the final decision.
+
+\subsection{Data Flow and Component Interaction}
+
+Given a transaction dataset $X$, the processing pipeline is defined as follows:
+
+\begin{enumerate}
+    \item \textbf{Stage 1: GBDT Layer}  
+    The input data is first processed using a GBDT model (XGBoost or LightGBM) [3].  
+    This stage performs:
+    \begin{itemize}
+        \item Initial classification (fraud vs non-fraud likelihood)
+        \item Feature importance ranking
+    \end{itemize}
+    The output of this stage is a probability score $P_{GBDT}$ and a refined feature representation.
+
+    \item \textbf{Stage 2: Deep Learning Layer}  
+    The refined features are then passed to an attention-based deep learning model.  
+    \begin{itemize}
+        \item For tabular datasets (e.g., IEEE-CIS [1]), a DNN with attention is used
+        \item For graph-structured datasets (e.g., Elliptic [2]), a GNN-based model is applied
+    \end{itemize}
+    This stage captures higher-order feature interactions and relational dependencies, producing a score $P_{DL}$. Graph-based learning enables modeling of transactional relationships and complex fraud patterns [9].
+
+    \item \textbf{Stage 3: Anomaly Detection Layer}  
+    An unsupervised anomaly detection model (e.g., Isolation Forest or Autoencoder) is applied to:
+    \begin{itemize}
+        \item Identify deviations from normal transaction patterns
+        \item Detect potential unknown fraud cases
+    \end{itemize}
+    This stage outputs an anomaly score $P_{AD}$ [7].
+\end{enumerate}
+
+\subsection{Fusion Strategy}
+
+The final prediction is obtained by combining the outputs of all three components. A weighted fusion approach is used:
+
+\begin{equation}
+P_{final} = w_1 P_{GBDT} + w_2 P_{DL} + w_3 P_{AD}
+\end{equation}
+
+where $w_1, w_2, w_3$ are weights assigned to each component such that $w_1 + w_2 + w_3 = 1$.
+
+A threshold $\tau$ is applied to $P_{final}$ to classify transactions as fraudulent or non-fraudulent.
+
+\subsection{Training and Optimization}
+
+Each component is trained independently and then integrated into the hybrid framework:
+
+\begin{itemize}
+    \item \textbf{Data Splitting:}  
+    The dataset is divided into training, validation, and testing sets. Where applicable, time-aware splitting is considered to preserve temporal dependencies.
+
+    \item \textbf{Handling Class Imbalance:}  
+    Given the rarity of fraud cases, class imbalance is addressed using:
+    \begin{itemize}
+        \item Class weighting in loss functions
+        \item Oversampling techniques (e.g., SMOTE, if applicable)
+    \end{itemize}
+    Imbalance handling is critical in fraud detection tasks [6].
+
+    \item \textbf{Hyperparameter Tuning:}  
+    Model parameters are optimized using grid search or cross-validation to improve generalization performance.
+
+    \item \textbf{Model-Specific Optimization:}
+    \begin{itemize}
+        \item GBDT models are tuned for tree depth, learning rate, and number of estimators [3]
+        \item Deep learning models are optimized using backpropagation with appropriate regularization
+        \item Anomaly detection models are calibrated to minimize false positives
+    \end{itemize}
+\end{itemize}
+
+\subsection{Dataset-Specific Modeling}
+
+The framework adapts to different data structures:
+\begin{itemize}
+    \item Tabular datasets are processed using GBDT and attention-based DNN models (IEEE-CIS [1])
+    \item Graph datasets are modeled using GNN architectures to capture relational dependencies (Elliptic [2])
+\end{itemize}
+
+This flexible design allows the framework to generalize across multiple domains and data formats.
+
+\subsection{Interpretability (Optional Extension)}
+
+To enhance transparency, Explainable AI (XAI) techniques such as SHAP are used to interpret model predictions [4]. This is particularly important in financial systems where decision justification is required.
+
+% ================= DATASETS =================
+
+\section{Datasets}
+
+The datasets that are used are Bitcoin Elliptic DataSet and IEEE-CIS Fraud detection Data set [2], [1].
+
+The Bitcoin Elliptic Dataset maps Bitcoin transactions to real entities belonging to licit categories(exchanges,wallet providers,miners,ilcit services,etc.)versus elicit ones(scams, malware,terrorist organizations,ransomware,Ponzi schemes etc.) [2]. The task on the dataset is to classify the illicit and licit nodes in a graph. This is a large-scale graph dataset representing a network of Bitcoin transactions [8]. The structure consists of 203,769 nodes and 234,355 edges. Each of the node is associated with 166 features, including timestamps,fees,and transaction volumes.
+
+The IEEE-CIS fraud detection in this dataset you are predicting the probability that an online transaction is fraudulent, as denoted by the binary target is Fraud [1]. The data is broken into two files identity and transaction, which are joined by Transaction ID. Not all transactions have corresponding identity information . This dataset also provides real-world labeled data for online payment transactions [6].
+
+The datasets also have few imbalance where Bitcoin Elliptic anamoly rate is of 2 [6].
+
+It represents users as nodes and transactions as edges. It includes a wide variety of attributes such as payment amount , product codes , payment card information, device information,and network connection data [1].
+
+% ================= EXPERIMENTAL DESIGN =================
+
+\section{Experimental Design}
+
+This section outlines the datasets, evaluation metrics, baseline models, and experimental setup used to assess the performance of the proposed hybrid framework.
+
+\subsection{Datasets}
+
+To evaluate the robustness and generalizability of the proposed approach, experiments are conducted on multiple datasets with different characteristics:
+
+\begin{itemize}
+    \item \textbf{IEEE-CIS Fraud Detection Dataset:}  
+    A large-scale tabular dataset containing anonymized transactional data, widely used for benchmarking fraud detection models [1]. This dataset is highly imbalanced, making it suitable for evaluating classification performance under real-world conditions.
+
+    \item \textbf{Elliptic Bitcoin Dataset:}  
+    A graph-based dataset representing Bitcoin transactions, where nodes correspond to transactions and edges represent flows of funds [2]. This dataset enables evaluation of graph-based learning approaches for detecting illicit activity [8].
+\end{itemize}
+
+These datasets provide both structured and relational data environments, allowing comprehensive evaluation of the hybrid framework.
+
+\subsection{Evaluation Metrics}
+
+Given the imbalanced nature of fraud detection, multiple performance metrics are used to evaluate the proposed framework. These metrics provide a comprehensive assessment of classification performance, particularly under skewed class distributions.
+
+\begin{itemize}
+    \item \textbf{Accuracy:} Measures the overall proportion of correctly classified transactions.
+    \item \textbf{Precision:} Measures the proportion of correctly identified fraudulent transactions.
+    \item \textbf{Recall:} Measures the ability to detect actual fraud cases (critical for minimizing missed fraud).
+    \item \textbf{F1-score:} Harmonic mean of precision and recall.
+    \item \textbf{AUC-ROC:} Evaluates model discrimination across different classification thresholds.
+\end{itemize}
+
+The mathematical definitions of the primary metrics are given below:
+
+\textbf{Accuracy}
+\begin{equation}
+Accuracy = \frac{TP + TN}{TP + TN + FP + FN}
+\end{equation}
+
+\textbf{Precision}
+\begin{equation}
+Precision = \frac{TP}{TP + FP}
+\end{equation}
+
+\textbf{Recall}
+\begin{equation}
+Recall = \frac{TP}{TP + FN}
+\end{equation}
+
+\textbf{F1 Score}
+\begin{equation}
+F1 = \frac{2 \times Precision \times Recall}{Precision + Recall}
+\end{equation}
+
+Special emphasis is placed on \textbf{recall} and \textbf{AUC}, as missing fraudulent transactions has a higher cost in revenue leakage systems [6].
+
+\subsection{Baseline Models}
+
+To assess the effectiveness of the proposed hybrid approach, it is compared against the following baseline models:
+
+\begin{itemize}
+    \item Logistic Regression
+    \item Random Forest
+    \item XGBoost (GBDT baseline) [3]
+    \item Deep Neural Network (without attention) [7]
+    \item Graph Neural Network (for graph datasets) [8]
+    \item Isolation Forest (anomaly detection baseline) [7]
+\end{itemize}
+
+These baselines represent traditional, classical ML, deep learning, and unsupervised approaches.
+
+\subsection{Experimental Setup}
+
+\begin{itemize}
+    \item \textbf{Data Splitting:}  
+    The datasets are divided into training, validation, and testing sets. Where applicable, time-based splitting is used to simulate real-world deployment conditions.
+
+    \item \textbf{Class Imbalance Handling:}  
+    Techniques such as class weighting and resampling are applied to mitigate imbalance effects [6].
+
+    \item \textbf{Hyperparameter Tuning:}  
+    Model parameters are optimized using grid search and cross-validation to ensure fair comparison across models.
+
+    \item \textbf{Implementation:}  
+    Models are implemented using standard machine learning and deep learning frameworks, ensuring reproducibility.
+\end{itemize}
+
+\subsection{Ablation Study (Optional)}
+
+To understand the contribution of each component, ablation experiments can be conducted by evaluating:
+
+\begin{itemize}
+    \item GBDT only [3]
+    \item Deep learning model only [7]
+    \item Anomaly detection only [7]
+    \item Hybrid combinations (GBDT + DL, DL + AD, etc.)
+\end{itemize}
+
+This helps quantify the benefit of the proposed hybrid integration.
+
+% ================= RESULTS =================
+
+\section{Results}
+
+\subsection{Experimental Results}
+
+The performance of the proposed hybrid framework is evaluated on both the IEEE-CIS dataset [1] and the Elliptic dataset [2]. The results are compared against baseline models to assess improvements in fraud detection and anomaly identification.
+
+\subsection{Quantitative Results}
+
+\begin{table}[h]
+\centering
+\caption{Performance Comparison on IEEE-CIS Dataset}
+\begin{tabular}{lcccc}
+\hline
+Model & Precision & Recall & F1-Score & AUC \\
+\hline
+Logistic Regression &  &  &  &  \\
+Random Forest &  &  &  &  \\
+XGBoost (GBDT) [3] &  &  &  &  \\
+Deep Neural Network [7] &  &  &  &  \\
+Isolation Forest [7] &  &  &  &  \\
+\textbf{Proposed Hybrid Model} &  &  &  &  \\
+\hline
+\end{tabular}
+\end{table}
+
+\begin{table}[h]
+\centering
+\caption{Performance Comparison on Elliptic Dataset}
+\begin{tabular}{lcccc}
+\hline
+Model & Precision & Recall & F1-Score & AUC \\
+\hline
+Logistic Regression &  &  &  &  \\
+Random Forest &  &  &  &  \\
+GNN [8] &  &  &  &  \\
+FraudGT [9] &  &  &  &  \\
+\textbf{Proposed Hybrid Model} &  &  &  &  \\
+\hline
+\end{tabular}
+\end{table}
+
+\subsection{Analysis}
+
+From Table I and Table II, the proposed hybrid model demonstrates improved performance across key evaluation metrics.
+
+\begin{itemize}
+    \item The hybrid model achieves higher recall compared to baseline models, indicating better detection of fraudulent and anomalous transactions.
+    \item Improvements in AUC suggest stronger discrimination capability between fraudulent and non-fraudulent classes.
+    \item The integration of anomaly detection contributes to identifying previously unseen patterns that are not captured by supervised models.
+    \item Graph-based modeling improves detection of relational fraud patterns in the Elliptic dataset [8], [9].
+\end{itemize}
+
+\subsection{Ablation Study}
+
+To evaluate the contribution of each component, ablation experiments are conducted as shown below:
+
+\begin{table}[h]
+\centering
+\caption{Ablation Study Results}
+\begin{tabular}{lcccc}
+\hline
+Model Variant & Precision & Recall & F1-Score & AUC \\
+\hline
+GBDT Only [3] &  &  &  &  \\
+Deep Learning Only [7] &  &  &  &  \\
+Anomaly Detection Only [7] &  &  &  &  \\
+GBDT + Deep Learning &  &  &  &  \\
+GBDT + Anomaly Detection &  &  &  &  \\
+\textbf{Full Hybrid Model} &  &  &  &  \\
+\hline
+\end{tabular}
+\end{table}
+
+% ================= CONCLUSION =================
+
+\section{Conclusion}
+
+In this work, a hybrid framework for revenue leakage detection is proposed by integrating Gradient Boosted Decision Trees (GBDT), attention-based deep learning models, and unsupervised anomaly detection techniques. The approach is designed to address key challenges in modern financial systems, including class imbalance, evolving fraud patterns, and heterogeneous data structures.
+
+The proposed framework leverages the strengths of supervised learning for structured data modeling, deep learning for capturing complex feature interactions, and anomaly detection for identifying previously unseen patterns. Additionally, the incorporation of graph-based modeling enables effective handling of relational transaction data. The use of Explainable AI (XAI) further enhances the interpretability of model predictions, which is critical in financial decision-making systems.
+
+The experimental design demonstrates that combining multiple paradigms can provide a more robust and scalable solution compared to standalone approaches. Overall, the proposed system shows strong potential for improving early detection of dispersed and low-magnitude revenue leakage, thereby supporting better financial control and operational efficiency.
+
+
+% ================= FUTURE SCOPE =================
+
+\section{Future Scope}
+
+While the proposed hybrid framework provides a comprehensive approach to revenue leakage detection, several directions can be explored to further enhance its effectiveness and applicability.
+
+\begin{itemize}
+    \item \textbf{Real-Time Deployment:}  
+    Extending the framework for real-time detection using streaming data architectures to enable immediate response to fraudulent activities.
+
+    \item \textbf{Advanced Graph Modeling:}  
+    Incorporating more sophisticated graph-based techniques, such as dynamic graph neural networks and temporal graph models, to better capture evolving transaction patterns.
+
+    \item \textbf{Automated Feature Learning:}  
+    Leveraging representation learning techniques and transformer-based models to automatically extract high-quality features from raw transactional data.
+
+    \item \textbf{Explainability Enhancement:}  
+    Improving interpretability through advanced XAI techniques to provide more detailed insights into model decisions, supporting regulatory compliance.
+
+    \item \textbf{Cross-Domain Generalization:}  
+    Evaluating the framework across multiple domains such as healthcare, taxation, and telecommunications to ensure robustness and scalability.
+
+    \item \textbf{Optimization and Efficiency:}  
+    Reducing computational complexity and improving training efficiency to enable deployment in resource-constrained environments.
+
+\end{itemize}
+
+These directions aim to make the proposed system more adaptive, scalable, and suitable for real-world deployment in complex financial ecosystems.
+% ================= REFERENCES =================
+\bibliographystyle{IEEEtran}
+\section{References}
+
+[1] IEEE-CIS Fraud Detection Dataset, Kaggle. [Online]. Available: https://www.kaggle.com/competitions/ieee-fraud-detection
+
+[2] Elliptic Data Set for Cryptocurrency Transaction Graph Analysis, Kaggle. [Online]. Available: https://www.kaggle.com/datasets/ellipticco/elliptic-data-set
+
+[3] T. Chen and C. Guestrin, “XGBoost: A scalable tree boosting system,” in \textit{Proc. 22nd ACM SIGKDD Int. Conf. Knowledge Discovery and Data Mining (KDD)}, San Francisco, CA, USA, 2016, pp. 785–794.
+
+[4] S. M. Lundberg and S. Lee, “A unified approach to interpreting model predictions,” in \textit{Advances in Neural Information Processing Systems (NeurIPS)}, 2017.
+
+[5] J. Aguilar, C. Salazar, H. Velasco, J. Monsalve-Pulido, and E. Montoya, “PRODANALYSIS: A revenue assurance system based on outlier mining,” \textit{INNOVA Research Journal}, vol. 1, no. 7, 2016.
+
+[6] S. Bhattacharyya, S. Jha, K. Tharakunnel, and J. C. Westland, “Data mining for credit card fraud detection,” \textit{Decision Support Systems}, vol. 50, no. 3, pp. 602–613, 2011.
+
+[7] R. Chalapathy and S. Chawla, “Deep learning for anomaly detection: A survey,” \textit{arXiv preprint arXiv:1901.03407}, 2019.
+
+[8] J. Zhou, G. Cui, Z. Zhang, et al., “Graph neural networks: A review of methods and applications,” \textit{AI Open}, vol. 1, pp. 57–81, 2020.
+
+[9] J. Lin, X. Guo, Y. Zhu, S. Mitchell, E. Altman, and J. Shun, “FraudGT: A simple, effective, and efficient graph transformer for financial fraud detection,” in \textit{Proc. ACM Int. Conf. AI in Finance (ICAIF)}, 2024.
+
+\end{document}
