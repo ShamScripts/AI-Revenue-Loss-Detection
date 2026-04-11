@@ -43,6 +43,11 @@ else:
                     pass
         preview_df(df, max_rows=35)
 
+base_path = fu.processed_dir() / "stage03_ieee_dnn_baselines.csv"
+if base_path.is_file():
+    st.markdown("**Attention vs plain MLP (validation ROC-AUC)** — `stage03_ieee_dnn_baselines.csv`")
+    st.dataframe(fu.safe_read_csv(base_path, nrows=20), use_container_width=True, hide_index=True)
+
 info_panel(
     "Scores",
     "• **dnn_pred_proba** — neural probability of fraud.  \n"

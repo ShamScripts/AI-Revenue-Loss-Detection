@@ -29,16 +29,14 @@ def processed_dir() -> Path:
     return get_project_root() / "processed_data"
 
 
-def reports_figures_dir() -> Path:
-    return get_project_root() / "reports" / "figures"
-
-
-def reports_dir() -> Path:
-    return get_project_root() / "reports"
+def figures_dir() -> Path:
+    """Pipeline-generated PNGs (EDA, SHAP, stage plots)."""
+    return get_project_root() / "figures"
 
 
 def report_docs_dir() -> Path:
-    return get_project_root() / "REPORT"
+    """Markdown / LaTeX report sources (tracked in Git)."""
+    return get_project_root() / "manuscript"
 
 
 def lit_review_dir() -> Path:
@@ -127,5 +125,8 @@ ARTIFACTS = {
         "final_hybrid_comparison_metrics.csv",
         "final_hybrid_scores.csv",
         "final_hybrid_threshold.txt",
+    ],
+    "stage5": [
+        "elliptic_graph_experiments.csv",
     ],
 }

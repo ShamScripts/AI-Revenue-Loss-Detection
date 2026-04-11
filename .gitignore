@@ -42,15 +42,23 @@ DATASET_ieee-cis-elliptic/**
 processed_data/**
 !processed_data/README.md
 
-# Generated plot binaries
-reports/figures/**
-!reports/figures/README.md
+# Generated plot binaries (pipeline EDA / model PNGs)
+figures/**
+!figures/README.md
 
-# Large PDFs (keep markdown / LaTeX in REPORT/)
+# Large PDFs (keep markdown / LaTeX in manuscript/)
 Lit_Review/**/*.pdf
-REPORT/**/*.pdf
+manuscript/**/*.pdf
 ML_Report.pdf
+ML_Report*.pdf
 Ref/**/*.pdf
+
+# Local reports / submission PDFs at repo root
+/*.pdf
+
+# Tools / IDE
+.cursor/
+*.code-workspace
 
 # Optional: uncomment to ignore all local PDFs
 # *.pdf

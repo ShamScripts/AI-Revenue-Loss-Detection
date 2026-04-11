@@ -18,16 +18,15 @@ render_sidebar_stats()
 section_title("Exploratory Data Analysis")
 st.markdown(
     "Figures are generated when you run the pipeline **without** `--no-plots`. "
-    "They live under **`reports/figures/`** (and elsewhere under `reports/`). "
+    "They live under **`figures/`** (project root). "
     "Each plot below includes a **short caption** for presentations and reports."
 )
 
-fig_root = fu.reports_figures_dir()
+fig_root = fu.figures_dir()
 if not fig_root.is_dir():
     fig_root.mkdir(parents=True, exist_ok=True)
 
 images = fu.list_images_recursive(fig_root)
-images += fu.list_images_recursive(fu.reports_dir())
 
 seen = set()
 uniq: list[Path] = []
@@ -40,7 +39,7 @@ images = uniq
 
 if not images:
     st.warning(
-        f"No figures found under `{fu.reports_figures_dir()}`. "
+        f"No figures found under `{fu.figures_dir()}`. "
         "Run `python main.py` (with plots enabled) to generate PNGs."
     )
 else:
@@ -58,7 +57,7 @@ else:
 
     if len(images) > 24:
         st.info(
-            f"**{len(images) - 24}** additional file(s) not shown here — open `reports/figures/` on disk for the full set."
+            f"**{len(images) - 24}** additional file(s) not shown here — open `figures/` on disk for the full set."
         )
 
 with st.expander("Figure naming & scan paths"):
@@ -69,4 +68,4 @@ with st.expander("Figure naming & scan paths"):
 - Unknown filenames still appear with a **generic** explanation; you can extend `app/components/figure_captions.py` for custom names.
 """
     )
-    st.code(str(fu.reports_figures_dir()), language="text")
+    st.code(str(fu.figures_dir()), language="text")

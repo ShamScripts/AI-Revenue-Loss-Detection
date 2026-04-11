@@ -19,7 +19,8 @@ render_sidebar_stats()
 section_title("GBDT & Baselines · Stage 2")
 st.markdown(
     "**Baselines:** Logistic Regression, Decision Tree, Random Forest (validation metrics printed to console during training). "
-    "**Primary model:** LightGBM with XGBoost fallback — probabilities exported for fusion."
+    "**Primary model:** LightGBM with XGBoost fallback — probabilities exported for fusion. "
+    "Optional **SMOTE**, **SHAP** summary plot, and **GBDT tuning** are available via CLI (see **Run Pipeline**)."
 )
 
 pred_path = fu.processed_dir() / "gbdt_preds.csv"
@@ -47,9 +48,14 @@ else:
                 st.bar_chart(s.value_counts(bins=20))
         preview_df(df, "Preview", max_rows=40)
 
+shap_path = fu.figures_dir() / "stage02_shap_summary.png"
+if shap_path.is_file():
+    st.markdown("**SHAP (GBDT)** — `figures/stage02_shap_summary.png`")
+    st.image(str(shap_path), use_container_width=True)
+
 info_panel(
     "Note",
-    "Notebook-era baseline comparison tables were printed to stdout only. "
-    "This dashboard focuses on **saved artifacts** (`gbdt_preds.csv`). "
-    "Re-run Stage 2 with logging to capture extended metrics if required.",
+    "Baseline comparison tables are printed to the console during Stage 2. "
+    "This page shows **`gbdt_preds.csv`** and SHAP when Stage 2 was run with SHAP enabled. "
+    "Experiment flags: `stage02_experiment_config.json`.",
 )

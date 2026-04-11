@@ -19,22 +19,23 @@ Email: f20230009@dubai.bits-pilani.ac.in, f20230096@dubai.bits-pilani.ac.in}
 % ================= ABSTRACT =================
 \begin{abstract}
 
-Revenue leakage (RL) is a major challenge in financial systems, arising from inefficiencies, system errors, and fraudulent activities. Traditional detection methods are largely reactive and fail to scale with increasing transaction complexity.
+The Renvenue leakage is the major challenge in  all the financial systems, arising from inefficiencies, system errors, and fraudulent activities. Traditional detection methods are largely reactive they fail to scale with the current increasing transaction complexity.
 
-This work proposes a hybrid framework that integrates Gradient Boosted Decision Trees (GBDT), attention-based deep learning, and unsupervised anomaly detection for proactive RL detection. The approach combines structured learning, complex pattern extraction, and identification of previously unseen anomalies. 
+This work proposes a hybrid framework that integrates Gradient Boosted Decision Trees (GBDT), attention-based deep learning, and unsupervised anomaly detection for proactive RL detection. The approach also combines the structured learning, complex pattern extraction, and identification of the previously unseen anomalies. 
 
-The framework is evaluated on tabular and graph-based datasets, including IEEE-CIS and Elliptic, using metrics such as Precision, Recall, F1-score, and AUC. The proposed method aims to improve detection of rare and dispersed anomalies, providing a scalable and robust solution for modern revenue leakage detection systems.
+This framework is also evaluated on tabular and graph-based datasets which also includes IEEE-CIS and Elliptic, using metrics such as Precision, Recall, F1-score, and AUC. The proposed method aims to improve detection of rare and dispersed anomalies,by providing a scalable and robust solution for modern revenue leakage detection systems.
 
 \end{abstract}
 
 % ================= INTRODUCTION =================
 \section{Introduction}
 
-Revenue leakage (RL) refers to the unintended loss of revenue due to operational inefficiencies, system errors, or fraudulent activities occurring within an organization. These losses typically arise after value has been delivered but before revenue is accurately recorded or collected. RL is a significant issue across multiple sectors, including finance, healthcare, and taxation. For instance, the U.S. Internal Revenue Service estimates an annual tax gap of approximately \$441 billion, while the healthcare sector can lose up to 15\% of total revenue due to claim denials and administrative inefficiencies.
+Revenue leakage (RL) refers to a unintended loss of revenue due to the operational inefficiencies, system errors, or fraudulent activities occurring within an organization. These losses are typically ariased  after the value has been delivered but before the revenue is accurately recorded or collected. RL is a significant issue across the multiple sectors which also includes finance, healthcare, and taxation. For instance, the U.S. Internal Revenue Service estimates that an annual tax gap of approximately \$441 billion, while the healthcare sector can lose up to 15\% of total revenue due to claim denials and administrative inefficiencies.
 
-The challenge of detecting revenue leakage is further amplified by the increasing complexity and scale of digital transactions. In environments such as the UAE, errors in VAT filings or delays in corporate tax registration can directly impact organizational profitability. More broadly, RL often manifests as small, distributed discrepancies across large volumes of transactions, making it difficult to detect using aggregated financial analysis. Similar characteristics have been observed in financial fraud detection, where anomalies are sparse and embedded within large-scale transaction streams [6].
+The challenge of detecting revenue leakage is further ampilified by the increasing complexity and scale of the digital transactions.In environments such as the UAE, errors in VAT fillings or delays in corporate tax registration can directly impact the organizational profitability. More broadly , the RL often manifests a small, distributed discrepancies across large volumes of transactions, making it very difficult to detct using aggregated financial analysis.Similar characterstics have been observed financial analysis. Similar characterstics have been observed in financial fraud detction, where anomalies are sparse and embedded within large-scale transaction streams [6].
 
-Traditional detection approaches are largely reactive and rely on manual audits, static rule-based systems, and retrospective analysis [5]. While these methods provide baseline monitoring, they are not well-suited for modern data environments characterized by high transaction volumes and evolving fraud patterns. As a result, detection is often delayed, allowing revenue losses to accumulate over time.
+The Traditional detection approaches are largely reactive and they also rely on the mannual audits, static rule-based systems,and the retrospective anlaysis [5]. While these methods provide a baseline monitoring, they are not well-suited for modern data environments characterized by high transaction volumes and evolving fraud patterns. As a result, detection is often delayed, and which this allows the revenue losses to accmulate over the time.
+
 
 To address these limitations, recent work has explored the use of Artificial Intelligence (AI) and Machine Learning (ML) for data-driven anomaly and fraud detection. Classical machine learning models, particularly Gradient Boosted Decision Trees (GBDT) such as XGBoost, have demonstrated strong performance in handling structured transactional data [3]. At the same time, deep learning approaches have been increasingly applied to capture complex feature interactions and high-dimensional patterns, while anomaly detection techniques provide a mechanism for identifying previously unseen irregularities [7].
 
@@ -48,33 +49,40 @@ The proposed approach aims to combine the strengths of supervised, deep learning
 
 \section{Related Work}
 
-Revenue leakage and financial fraud detection have been extensively studied across multiple domains, including taxation, healthcare, telecommunications, and financial services. Existing approaches can be broadly categorized into rule-based systems, classical machine learning methods, deep learning techniques, graph-based models, and unsupervised anomaly detection methods.
+Revenue leakage and financial fraud detection have beenextensively studied across multiple domains, including taxation,healtcare,telecommunications,and financial services.Existing approaches are broadly categorized into rule-based systems, classical machine learning methods,some deep learning techiques,graph-based models,and unsupervised anamoly detection methods.      
+
 
 \subsection{Rule-Based and Traditional Approaches}
-Early revenue leakage detection systems relied heavily on manual audits and rule-based monitoring frameworks. These systems use predefined thresholds and domain-specific rules to flag irregularities in transactions. While effective for detecting known patterns, they lack adaptability and fail to generalize to evolving fraud behaviors. Moreover, such systems struggle with scalability in high-volume transaction environments, leading to delayed detection and increased operational overhead [5].
+Early revenue leakage detection system relied heavily on manual audits and rule-based monitoring frameworks. These systems use prediefined thresholds and domain-specific rules to flag the irregularities in transactions. While effective for the detcting known patterns , they lack adapatability and also fail to generalize to evolve fraud behaviors.Moreover, such systems struggle to provide scalablilty in high-volume transaction environments, whic also leads to delayed detection and increased operational overhead.[5]
+
 
 \subsection{Classical Machine Learning Approaches}
-With the availability of large-scale transactional data, classical machine learning models such as Random Forest, Logistic Regression, and Gradient Boosted Decision Trees (GBDT) have been widely adopted for fraud detection tasks [6]. Models such as XGBoost and LightGBM have demonstrated strong performance due to their ability to handle structured data and capture nonlinear relationships [3]. However, these methods primarily rely on labeled data and often face challenges in detecting rare or previously unseen fraud patterns. Additionally, their performance may degrade in highly imbalanced datasets without careful tuning.
+
+With the availability of large-scale transactional data, there are many classical machine learning models such as Random forest, Logistic Regression, and Gradient boosted Decision trees(GBDT) have been widely adopted for fraud documentation tasks[6]. Models such as XGBoost and LightGBM have demonstrated strong performance due to their readability to handle structured dataand capture nonlinear relationships [3].However, these methods primarily rely on labeled data and often face challenges in detcting rare or previously unseen fraud patterns. Their performance may degrade in the highly imbalanced datasets.
+
 
 \subsection{Deep Learning and Attention-Based Models}
-Deep learning models, including Deep Neural Networks (DNNs) and attention-based architectures, have been proposed to capture complex feature interactions in financial data. Attention mechanisms allow models to focus on the most relevant features, improving detection accuracy in high-dimensional datasets. Despite their strengths, deep learning models typically require large volumes of labeled data and are often computationally expensive. Furthermore, their black-box nature limits interpretability, which is critical in financial and regulatory applications [7]. Explainability techniques such as SHAP have been introduced to address these limitations [4].
+Deep learning models, including Deep Neural Networks(DNNs) and attention-based architectures, have been proposed to capture comples feature interactions in the financial data. Attention mechanisms also allows models to focus on the most relevant features, improving detection accuracy in high-dimensional datasets. Despite their strengths, deep learning models typically require large volumes of labeled data and are also often computationally expensive. Furthermore, their black-box nature limits interpretability, which is critical in financial and regulatory applications [7]. Explanaibility techniques such as SHAP have been introduced to address these limitations[4].
+
 
 \subsection{Graph-Based Approaches}
-Recent work has explored graph-based learning for fraud detection, particularly in scenarios where transactional relationships are important. Graph Neural Networks (GNNs) and graph transformer models, such as FraudGT, model transactions as networks of entities and interactions, enabling the detection of complex fraud patterns such as cycles and coordinated behavior [8], [9]. While these methods improve detection of relational patterns, they are computationally intensive and may not scale efficiently to very large datasets without optimization.
+Recent work has explored graph-based learning for fraud detcetion, particularly in scenarios where transactional relationships are important.Graph Neural Networks(GNNs) and graph transformer models, such as FraudGT, model transactions as networks of entities and interactions, enabling the detction of complex fraud patterns such as cycles and coordinated beahviour [8], [9]. While these methods improve detection of relational patterns, they are computationally intensive and may not scale efficiently to very large datasets without optimization.
+
 
 \subsection{Unsupervised and Anomaly Detection Methods}
-Unsupervised methods, including Isolation Forest, clustering techniques, and autoencoders, have been widely used for anomaly detection in revenue systems. These approaches are particularly useful when labeled data is scarce, as they identify deviations from normal behavior [7]. However, they often suffer from high false positive rates and lack contextual understanding of domain-specific rules, limiting their practical applicability in isolation.
+Unsupervised methods, including Isolation forest,Clustering techniques, and autoencoders,have been widely used for anamoly detection in revenue systems. These approaches are particularly useful when labeled data is scarce, as they identify derivations from normal behavior[7]. However, they often suffer from highfalso positive rates and lack contextual understanding of domain-specific rules, limiting their practical applicability in isloation.
 
 \subsection{Research Gap and Motivation}
-From the existing literature, it is evident that no single approach effectively addresses all challenges associated with revenue leakage detection. Rule-based systems lack adaptability, classical machine learning models struggle with unseen patterns, deep learning methods face interpretability and data requirements issues, graph-based approaches are computationally demanding, and unsupervised methods often produce noisy outputs.
+From the existing literature, it is evident that no single approcah effiectively addresses all challenges assocuated with revenue leakage detction. Rule-based systems lack adaptability, classical machine learning models struggle with unseen patterns, deep learning methods face intrepretability and data requirements iossues, graph-based approaches are computationally demanding, and also unsupervised methods they often produce noisy outputs.
 
-This motivates the need for a hybrid framework that integrates the strengths of multiple paradigms. By combining GBDT for structured feature learning [3], attention-based deep learning for complex pattern extraction [7], and anomaly detection for identifying unknown patterns, the proposed approach aims to provide a more robust and scalable solution for revenue leakage detection.
+This also motivates the need for a hybrid frameowrk that also integrates the strengths pf multiple paradigms.By combining GBDT for structured feature learning[3], attention-based deep learning for complex pattern extraction[7], and anomly detction for identifying unkonwn patterns, the propsed approach ainms to provide a more robust and scalable solution for revenue leakage detction.
+.
 
 % ================= METHODOLOGY =================
 
 \section{Proposed Methodology}
 
-This work proposes a hybrid framework for revenue leakage detection that integrates supervised learning, deep learning, and unsupervised anomaly detection. The objective is to leverage the strengths of each paradigm to address challenges such as class imbalance, evolving fraud patterns, and heterogeneous data structures [7].
+This work proposes a hybrid frameork for revenue leakage detction that integrate supervised learning, deep learning, and unsupervised anamoly detection. The objective is to leverage the strengths of each paradigm to address challenegs such as class imbalance, evolving fraud patterns, and heterogeneous data structures[7].
 
 \subsection{Overall Architecture}
 

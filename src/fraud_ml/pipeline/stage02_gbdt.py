@@ -2,8 +2,10 @@
 
 from __future__ import annotations
 
+import json
 import warnings
 from pathlib import Path
+from typing import Any
 
 import matplotlib
 
@@ -15,12 +17,13 @@ from sklearn.ensemble import RandomForestClassifier
 from sklearn.impute import SimpleImputer
 from sklearn.linear_model import LogisticRegression
 from sklearn.metrics import f1_score, precision_score, recall_score, roc_auc_score
-from sklearn.model_selection import train_test_split
+from sklearn.model_selection import RandomizedSearchCV, train_test_split
 from sklearn.pipeline import Pipeline
 from sklearn.preprocessing import StandardScaler
 from sklearn.tree import DecisionTreeClassifier
 
 from fraud_ml.config.paths import get_paths
+from fraud_ml.pipeline.split_utils import SplitMode, ieee_train_valid_arrays
 
 warnings.filterwarnings("ignore")
 RANDOM_STATE = 42
@@ -38,11 +41,19 @@ def evaluate_model(name, y_true, y_proba, threshold=0.5):
     }
 
 
-def run(project_root: Path | None = None, save_plots: bool = True) -> None:
+def run(
+    project_root: Path | None = None,
+    save_plots: bool = True,
+    *,
+    split_mode: SplitMode = "random",
+    use_smote: bool = False,
+    tune_gbdt: bool = False,
+    shap_sample_size: int = 2500,
+) -> None:
     paths = get_paths(project_root)
     data_root = paths.data_root
     processed_dir = paths.processed_dir
-    figures_dir = paths.reports_figures
+    figures_dir = paths.figures
     data_path = processed_dir / "ieee_train_eda_ready.csv"
 
     if not data_root.exists():
@@ -68,11 +79,23 @@ def run(project_root: Path | None = None, save_plots: bool = True) -> None:
     print("Class distribution:")
     print(y.value_counts(normalize=True).rename("ratio"))
 
-    X_train, X_valid, y_train, y_valid = train_test_split(
-        X, y, test_size=0.2, random_state=RANDOM_STATE, stratify=y
+    X_train, X_valid, y_train, y_valid, _, _ = ieee_train_valid_arrays(
+        df, X, y, split_mode=split_mode, test_size=0.2
     )
-    print("Train shape:", X_train.shape)
-    print("Valid shape:", X_valid.shape)
+    print(f"Split mode: {split_mode} | Train shape:", X_train.shape, "Valid shape:", X_valid.shape)
+
+    if use_smote:
+        try:
+            from imblearn.over_sampling import SMOTE
+
+            imp_pre = SimpleImputer(strategy="median")
+            X_tr_np = imp_pre.fit_transform(X_train)
+            sm = SMOTE(random_state=RANDOM_STATE)
+            X_tr_np, y_train = sm.fit_resample(X_tr_np, y_train)
+            X_train = pd.DataFrame(X_tr_np, columns=X_train.columns, index=None)
+            print("After SMOTE — train shape:", X_train.shape, "fraud rate:", float(np.mean(y_train)))
+        except Exception as e:
+            print(f"[warn] SMOTE skipped: {e}")
 
     results = []
 
@@ -80,7 +103,7 @@ def run(project_root: Path | None = None, save_plots: bool = True) -> None:
         [
             ("imputer", SimpleImputer(strategy="median")),
             ("scaler", StandardScaler()),
-            ("clf", LogisticRegression(max_iter=1000, random_state=RANDOM_STATE, n_jobs=-1)),
+            ("clf", LogisticRegression(max_iter=1000, random_state=RANDOM_STATE)),
         ]
     )
     log_reg.fit(X_train, y_train)
@@ -142,7 +165,28 @@ def run(project_root: Path | None = None, save_plots: bool = True) -> None:
             "class_weight": "balanced",
         }
         gbdt_model = lgb.LGBMClassifier(**lgb_params)
-        gbdt_model.fit(X_train_gbdt, y_train)
+        if tune_gbdt:
+            param_dist = {
+                "n_estimators": [200, 400, 600],
+                "learning_rate": [0.03, 0.05, 0.08],
+                "num_leaves": [31, 63, 127],
+                "subsample": [0.7, 0.85],
+            }
+            search = RandomizedSearchCV(
+                gbdt_model,
+                param_distributions=param_dist,
+                n_iter=12,
+                scoring="roc_auc",
+                cv=3,
+                random_state=RANDOM_STATE,
+                n_jobs=-1,
+                verbose=1,
+            )
+            search.fit(X_train_gbdt, y_train)
+            gbdt_model = search.best_estimator_
+            print("Best GBDT params (RandomizedSearchCV):", search.best_params_)
+        else:
+            gbdt_model.fit(X_train_gbdt, y_train)
         gbdt_proba = gbdt_model.predict_proba(X_valid_gbdt)[:, 1]
     except Exception:
         from xgboost import XGBClassifier
@@ -193,6 +237,35 @@ def run(project_root: Path | None = None, save_plots: bool = True) -> None:
         plt.close()
     else:
         print("This GBDT implementation does not expose feature_importances_.")
+
+    try:
+        import shap
+
+        shap_n = min(shap_sample_size, len(X_train_gbdt))
+        X_shap = X_train_gbdt.sample(n=shap_n, random_state=RANDOM_STATE) if len(X_train_gbdt) > shap_n else X_train_gbdt
+        explainer = shap.TreeExplainer(gbdt_model)
+        sv = explainer.shap_values(X_shap)
+        if isinstance(sv, list):
+            sv_plot = sv[1] if len(sv) > 1 else sv[0]
+        else:
+            sv_plot = sv
+        plt.figure(figsize=(10, 8))
+        shap.summary_plot(sv_plot, X_shap, show=False, max_display=20)
+        if save_plots:
+            figures_dir.mkdir(parents=True, exist_ok=True)
+            plt.savefig(figures_dir / "stage02_shap_summary.png", dpi=120, bbox_inches="tight")
+        plt.close()
+        print("Saved SHAP summary:", figures_dir / "stage02_shap_summary.png")
+    except Exception as e:
+        print(f"[warn] SHAP plot skipped: {e}")
+
+    cfg: dict[str, Any] = {
+        "split_mode": split_mode,
+        "use_smote": use_smote,
+        "tune_gbdt": tune_gbdt,
+        "stage": 2,
+    }
+    (processed_dir / "stage02_experiment_config.json").write_text(json.dumps(cfg, indent=2), encoding="utf-8")
 
     X_all_gbdt = X.copy()
     for col in X_all_gbdt.columns:

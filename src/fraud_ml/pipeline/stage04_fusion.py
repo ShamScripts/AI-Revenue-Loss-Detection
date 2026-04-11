@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import json
 from pathlib import Path
 
 import matplotlib
@@ -22,9 +23,14 @@ from sklearn.metrics import (
     roc_auc_score,
     roc_curve,
 )
-from sklearn.model_selection import train_test_split
 
 from fraud_ml.config.paths import get_paths
+from fraud_ml.pipeline.split_utils import (
+    SplitMode,
+    fusion_random_train_val_test,
+    fusion_temporal_train_val_test,
+)
+from fraud_ml.reporting.report_tables import build_and_save_report_tables
 
 sns.set(style="whitegrid")
 RANDOM_STATE = 42
@@ -61,10 +67,15 @@ def metrics_from_proba(y_true, y_prob, threshold=0.5):
     }
 
 
-def run(project_root: Path | None = None, save_plots: bool = True) -> None:
+def run(
+    project_root: Path | None = None,
+    save_plots: bool = True,
+    *,
+    split_mode: SplitMode = "random",
+) -> None:
     paths = get_paths(project_root)
     PROCESSED_DIR = paths.processed_dir
-    figures_dir = paths.reports_figures
+    figures_dir = paths.figures
     PROCESSED_DIR.mkdir(parents=True, exist_ok=True)
 
     gbdt_path = PROCESSED_DIR / "gbdt_preds.csv"
@@ -104,7 +115,10 @@ def run(project_root: Path | None = None, save_plots: bool = True) -> None:
         raise ValueError("Could not find an anomaly score column in hybrid_dnn_anomaly_preds.csv")
 
     if id_g and id_d:
-        score_df = dnn_df[[id_d, dnn_score_col, anom_score_col] + ([hybrid03_col] if hybrid03_col else [])].copy()
+        dnn_pick = [id_d, dnn_score_col, anom_score_col] + ([hybrid03_col] if hybrid03_col else [])
+        if "TransactionDT" in dnn_df.columns:
+            dnn_pick.append("TransactionDT")
+        score_df = dnn_df[dnn_pick].copy()
         score_df = score_df.merge(
             gbdt_df[[id_g, gbdt_score_col]].copy(), left_on=id_d, right_on=id_g, how="left"
         )
@@ -167,13 +181,27 @@ def run(project_root: Path | None = None, save_plots: bool = True) -> None:
 
     print("Final score_df shape:", score_df.shape)
 
-    train_df, test_df = train_test_split(
-        score_df, test_size=0.2, random_state=RANDOM_STATE, stratify=score_df["target"]
-    )
-    dev_df, val_df = train_test_split(
-        train_df, test_size=0.25, random_state=RANDOM_STATE, stratify=train_df["target"]
-    )
+    if split_mode == "temporal" and "TransactionDT" in score_df.columns:
+        print("Fusion split mode: temporal (ordered by TransactionDT)")
+        dev_df, val_df, test_df = fusion_temporal_train_val_test(
+            score_df, test_size=0.2, val_frac_of_train=0.25, random_state=RANDOM_STATE
+        )
+    elif split_mode == "temporal":
+        print("[warn] TransactionDT not in fused table — using random stratified fusion split.")
+        dev_df, val_df, test_df = fusion_random_train_val_test(
+            score_df, test_size=0.2, val_frac_of_train=0.25, random_state=RANDOM_STATE
+        )
+    else:
+        print("Fusion split mode: random stratified")
+        dev_df, val_df, test_df = fusion_random_train_val_test(
+            score_df, test_size=0.2, val_frac_of_train=0.25, random_state=RANDOM_STATE
+        )
     print("dev:", dev_df.shape, "val:", val_df.shape, "test:", test_df.shape)
+
+    (PROCESSED_DIR / "stage04_experiment_config.json").write_text(
+        json.dumps({"split_mode": split_mode, "stage": 4}, indent=2),
+        encoding="utf-8",
+    )
 
     for frame in [dev_df, val_df, test_df, score_df]:
         frame["hybrid_weighted_score"] = (
@@ -278,6 +306,19 @@ def run(project_root: Path | None = None, save_plots: bool = True) -> None:
     print("Saved:", results_path)
     print("Saved:", scores_path)
     print("Saved:", threshold_path)
+
+    try:
+        build_and_save_report_tables(
+            score_df,
+            test_df,
+            best_threshold,
+            project_root=paths.root,
+            w_gbdt=W_GBDT,
+            w_dnn=W_DNN,
+            w_anom=W_ANOM,
+        )
+    except Exception as e:
+        print(f"[warn] Could not build report tables: {e}")
 
 
 def main() -> None:

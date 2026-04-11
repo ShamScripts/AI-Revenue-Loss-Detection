@@ -45,7 +45,7 @@ def run(
     PROJECT_ROOT = paths.root
     DATA_ROOT = paths.data_root
     PROCESSED_DIR = paths.processed_dir
-    figures_dir = paths.reports_figures
+    figures_dir = paths.figures
 
     IEEE_DIR = paths.ieee_dir
     ieee_train_transaction_path = IEEE_DIR / "train_transaction.csv"

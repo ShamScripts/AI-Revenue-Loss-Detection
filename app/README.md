@@ -19,7 +19,6 @@ app/
 ├── components/
 │   ├── figure_captions.py # Titles + one-line text for EDA/plot PNGs
 │   ├── cards.py           # KPI cards, badges, panels
-│   ├── charts.py          # Plotly helpers (optional)
 │   ├── file_utils.py      # Paths, safe CSV/JSON/text, artifact discovery
 │   ├── overview_content.py# Shared landing content
 │   ├── stage_utils.py     # Artifact presence / counts
@@ -33,7 +32,8 @@ app/
     ├── 5_Deep_Anomaly.py
     ├── 6_Fusion_and_Final_Results.py
     ├── 7_Reports_and_Documents.py
-    └── 8_Run_Pipeline.py
+    ├── 8_Run_Pipeline.py
+    └── 9_Elliptic_Graph.py
 ```
 
 ## Page → pipeline mapping
@@ -41,16 +41,18 @@ app/
 | Page | Stage | Key files |
 |------|-------|-----------|
 | 2 | 1 | `ieee_train_eda_ready.csv`, `preprocessing_config.json`, `ieee_missing_top20_summary.csv` |
-| 3 | 1 (EDA plots) | `reports/figures/*.png` |
+| 3 | 1 (EDA plots) | `figures/*.png` |
 | 4 | 2 | `gbdt_preds.csv` |
 | 5 | 3 | `hybrid_dnn_anomaly_preds.csv` |
 | 6 | 4 | `final_hybrid_comparison_metrics.csv`, `final_hybrid_scores.csv`, `final_hybrid_threshold.txt` |
+| 9 | 5 | `elliptic_graph_experiments.csv` |
 
 ## Extending
 
 - Add new artifact names in `components/file_utils.py` → `ARTIFACTS`.
-- Add plots: drop PNGs into `reports/figures/` — they appear on **EDA** automatically.
+- Add plots: drop PNGs into `figures/` — they appear on **EDA** automatically.
 - For new metrics CSVs, add a section in `pages/6_Fusion_and_Final_Results.py` with `safe_read_csv`.
+- Plotly charts are inlined in pages; there is no separate `charts.py` helper module.
 - Keep `st.set_page_config` only in `app.py` (Streamlit requirement).
 
 ## Troubleshooting

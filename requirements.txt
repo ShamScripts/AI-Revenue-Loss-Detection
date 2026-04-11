@@ -11,6 +11,7 @@ tensorflow>=2.15
 imbalanced-learn>=0.12
 networkx>=3.2
 shap>=0.44
+torch>=2.0
 
 # Dashboard (optional)
 streamlit>=1.28

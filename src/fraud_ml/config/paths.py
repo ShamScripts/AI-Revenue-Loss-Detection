@@ -23,7 +23,7 @@ class ProjectPaths:
     ieee_dir: Path
     elliptic_dir: Path
     processed_dir: Path
-    reports_figures: Path
+    figures: Path  # pipeline PNG outputs (EDA, stages 1–5)
 
     @classmethod
     def from_root(cls, root: Path | None = None) -> ProjectPaths:
@@ -32,14 +32,14 @@ class ProjectPaths:
         ieee = data / "ieee-fraud-detection"
         elliptic = data / "elliptic-dataset" / "elliptic_bitcoin_dataset"
         processed = r / "processed_data"
-        figs = r / "reports" / "figures"
+        figs = r / "figures"
         return cls(
             root=r,
             data_root=data,
             ieee_dir=ieee,
             elliptic_dir=elliptic,
             processed_dir=processed,
-            reports_figures=figs,
+            figures=figs,
         )
 
 

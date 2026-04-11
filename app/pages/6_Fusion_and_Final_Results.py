@@ -75,8 +75,32 @@ if scores is not None:
 else:
     st.info("No `final_hybrid_scores.csv` yet.")
 
+section_title("Report tables (for thesis / paper)")
+st.caption(
+    "Generated when you run **Stage 4** — same **test split** as fusion for IEEE rows; "
+    "Elliptic baselines use a separate 80/20 split on licit/illicit. Empty cells are placeholders "
+    "for models not implemented in this repo (e.g. GNN, FraudGT) or values you paste from elsewhere."
+)
+
+t1 = proc / "report_table_1_ieee_cis.csv"
+t2 = proc / "report_table_2_elliptic.csv"
+t3 = proc / "report_table_3_ablation.csv"
+
+for label, path in (
+    ("TABLE I — Performance comparison (IEEE-CIS)", t1),
+    ("TABLE II — Performance comparison (Elliptic)", t2),
+    ("TABLE III — Ablation study results", t3),
+):
+    df_r = fu.safe_read_csv(path, nrows=50)
+    if df_r is not None and not df_r.empty:
+        st.markdown(f"**{label}**")
+        st.dataframe(df_r, use_container_width=True, hide_index=True)
+        st.caption(f"`{path.name}`")
+    else:
+        st.warning(f"`{path.name}` not found — run Stage 4 after Stages 2–3.")
+
 info_panel(
     "Conclusion",
-    "Use the **comparison table** for faculty review; download **CSV** artifacts from "
+    "Use the **comparison table** and **report tables** for faculty review; download **CSV** artifacts from "
     "`processed_data/` or the Reports page.",
 )

@@ -21,8 +21,8 @@ from components.styling import (
 def render_overview() -> None:
     hero(
         "Hybrid Fraud Detection System",
-        "A reproducible four-stage pipeline combining tabular gradient boosting, neural scoring, "
-        "anomaly detection, and calibrated fusion—evaluated on IEEE-CIS transactions and Elliptic graph-enriched features.",
+        "A reproducible pipeline: tabular gradient boosting, neural scoring, anomaly detection, and fusion on IEEE-CIS—"
+        "plus an optional Elliptic graph stage (GCN + tabular baselines) aligned with the academic report.",
         badge="Capstone · ML pipeline dashboard",
     )
 
@@ -30,7 +30,7 @@ def render_overview() -> None:
     pct = int(100 * ok / total) if total else 0
     kpi_row(
         [
-            ("Pipeline depth", "4 stages", "End-to-end ML workflow"),
+            ("Pipeline depth", "5 stages", "IEEE 1–4 · Elliptic graph (5) optional"),
             ("Data sources", "2 datasets", "IEEE-CIS · Elliptic Bitcoin"),
             ("Model families", "6+", "Baselines · GBDT · DNN/MLP · IF · Fusion"),
             ("Artifacts ready", f"{ok} / {total}", f"≈ {pct}% of expected outputs"),
@@ -66,9 +66,10 @@ def render_overview() -> None:
     stage_timeline(
         [
             ("Ingest & clean", "Merge, drop sparse cols, impute, engineer time/amount + graph features"),
-            ("GBDT stack", "Classical baselines + LightGBM/XGBoost; export probabilities"),
-            ("Deep + anomaly", "Neural fraud score + Isolation Forest; hybrid stage-3 score"),
-            ("Fusion & eval", "Normalize, weight, tune threshold; final metrics & scores"),
+            ("GBDT stack", "Baselines + LightGBM/XGBoost; optional SMOTE, SHAP, tuning; gbdt_preds.csv"),
+            ("Deep + anomaly", "Attention DNN + plain MLP baseline + Isolation Forest; hybrid stage-3 score"),
+            ("Fusion & eval", "Normalize, weight, tune threshold; final metrics & report tables"),
+            ("Elliptic graph", "Optional: GCN on edgelist + FraudGT-style MLP & LR/RF (temporal split)"),
         ]
     )
 
@@ -89,7 +90,11 @@ def render_overview() -> None:
             ),
             (
                 4,
-                "final_hybrid_comparison_metrics.csv, final_hybrid_scores.csv, final_hybrid_threshold.txt.",
+                "final_hybrid_*.csv / threshold, report_table_*.csv — fusion + paper-ready tables.",
+            ),
+            (
+                5,
+                "elliptic_graph_experiments.csv — GCN (requires PyTorch) + deep tabular baselines on Elliptic.",
             ),
         ]
     )
@@ -101,7 +106,7 @@ def render_overview() -> None:
 |------|---------|
 | `{fu.get_project_root()}` | Project root |
 | `{fu.processed_dir()}` | CSV + JSON artifacts |
-| `{fu.reports_figures_dir()}` | Saved EDA / model figures |
+| `{fu.figures_dir()}` | Saved EDA / model figures (`figures/`) |
 
 Run **`python main.py`** from the project root (Python **3.10–3.12**). Dashboard is read-only except **Run Pipeline**.
 """

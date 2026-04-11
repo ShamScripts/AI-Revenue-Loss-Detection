@@ -1,4 +1,4 @@
-"""Project entry: run the Python pipeline (stages 1–4)."""
+"""Project entry: run the Python pipeline (stages 1–5)."""
 
 from __future__ import annotations
 
@@ -13,7 +13,7 @@ if SRC.is_dir() and str(SRC) not in sys.path:
 
 
 def main() -> int:
-    parser = argparse.ArgumentParser(description="Run the fraud_ml pipeline (stages 1–4).")
+    parser = argparse.ArgumentParser(description="Run the fraud_ml pipeline (stages 1–5).")
     parser.add_argument(
         "--project-dir",
         default=".",
@@ -23,14 +23,35 @@ def main() -> int:
     parser.add_argument(
         "--stage",
         type=int,
-        choices=[1, 2, 3, 4],
+        choices=[1, 2, 3, 4, 5],
         default=None,
-        help="Run only pipeline stage 1–4. Default: run all in order.",
+        help="Run only pipeline stage 1–5. Default: run all (including Elliptic graph unless skipped).",
     )
     parser.add_argument(
         "--no-plots",
         action="store_true",
-        help="Skip saving figures under reports/figures.",
+        help="Skip saving figures under figures/.",
+    )
+    parser.add_argument(
+        "--split",
+        choices=["random", "temporal"],
+        default="random",
+        help="IEEE + fusion: random stratified (default) or temporal split.",
+    )
+    parser.add_argument(
+        "--smote",
+        action="store_true",
+        help="Apply SMOTE to IEEE training data in stage 2.",
+    )
+    parser.add_argument(
+        "--tune-gbdt",
+        action="store_true",
+        help="Hyperparameter search for GBDT in stage 2.",
+    )
+    parser.add_argument(
+        "--skip-elliptic-graph",
+        action="store_true",
+        help="Skip stage 5 when running the full pipeline.",
     )
     args = parser.parse_args()
     project_dir = args.project_dir.resolve()
@@ -41,6 +62,10 @@ def main() -> int:
         project_root=project_dir,
         stage=args.stage,
         save_plots=not args.no_plots,
+        split_mode=args.split,
+        use_smote=args.smote,
+        tune_gbdt=args.tune_gbdt,
+        skip_elliptic_graph=args.skip_elliptic_graph,
     )
 
 

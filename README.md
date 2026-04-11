@@ -1,197 +1,241 @@
-# AI Revenue Loss Detection
+# Hybrid Fraud Detection — IEEE-CIS & Elliptic
 
-Multi-stage fraud-detection experiments on **IEEE-CIS** (tabular e-commerce transactions) and **Elliptic** (Bitcoin transaction graph). The repo ships a Python training pipeline (GBDT, deep learning with optional attention, anomaly detection, and fusion) plus a **Streamlit** dashboard to explore artifacts and reports.
+[![Python 3.10–3.12](https://img.shields.io/badge/python-3.10--3.12-blue.svg)](https://www.python.org/downloads/)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
+
+End-to-end **machine learning pipeline** and **Streamlit dashboard** for fraud detection: **gradient boosting**, **attention / plain neural nets**, **isolation-forest anomaly scores**, **weighted fusion** on **IEEE-CIS** transactions, plus optional **graph convolution (GCN)** and **tabular baselines** on the **Elliptic** Bitcoin dataset.
+
+**Course / submission use:** clone → add data locally → run `main.py` → inspect `processed_data/` and the dashboard. Raw data and generated artifacts are **not** committed to Git (see `.gitignore`).
 
 ---
 
 ## Contents
 
-- [What’s included](#whats-included)
+- [Features](#features)
+- [Repository layout](#repository-layout)
 - [Requirements](#requirements)
 - [Quick start](#quick-start)
-- [Run the pipeline](#run-the-pipeline)
-- [Streamlit dashboard](#streamlit-dashboard)
-- [Data layout](#data-layout)
-- [Outputs](#outputs)
-- [Reports](#reports)
-- [Git: what to track](#git-what-to-track)
+- [Datasets](#datasets)
+- [Pipeline (stages 1–5)](#pipeline-stages-15)
+- [Command-line options](#command-line-options)
+- [Dashboard](#dashboard)
+- [Outputs & report tables](#outputs--report-tables)
+- [Methodology notes](#methodology-notes)
+- [Pushing to GitHub](#pushing-to-github)
+- [License](#license)
 
 ---
 
-## What’s included
+## Features
 
-| Area | Details |
-|------|---------|
-| **Pipeline** | Four stages under `src/fraud_ml/pipeline/`: preprocessing → GBDT baselines → hybrid DNN + anomaly → fusion and thresholding |
-| **Models** | LightGBM, XGBoost, TensorFlow DNN (with sklearn `MLPClassifier` fallback if TF is unavailable), fusion layer |
-| **Dashboard** | Multi-page Streamlit app in `app/` (EDA, per-stage results, optional `main.py` runner) |
-| **Docs** | Markdown and LaTeX under `REPORT/`, literature notes under `Lit_Review/` |
+| Area | What you get |
+|------|----------------|
+| **IEEE-CIS** | Preprocessing, EDA, LR/RF/DT + **LightGBM/XGBoost**, optional **SMOTE**, **SHAP**, **hyperparameter search** |
+| **Deep learning** | **Attention DNN** (TensorFlow) + **plain MLP** baseline; **Isolation Forest** anomaly channel |
+| **Fusion** | Normalized scores, weighted fusion, threshold tuning, **report CSVs** for papers |
+| **Elliptic** | Optional **2-layer GCN** (PyTorch), **FraudGT-style MLP**, LR/RF, **temporal** split |
+| **UI** | Multi-page **Streamlit** app over `processed_data/` artifacts |
 
-Implementation package name: **`fraud_ml`** (see `pyproject.toml`).
+---
+
+## Repository layout
+
+```
+├── main.py                 # CLI entry: run pipeline stages
+├── requirements.txt        # Full dependency stack (TF, torch, dashboard, …)
+├── pyproject.toml          # Package metadata; pip install -e .
+├── LICENSE                 # MIT
+├── CONTRIBUTING.md         # Short notes for contributors
+├── docs/
+│   └── SUBMISSION_CHECKLIST.md   # pre-push checklist for courses
+├── src/fraud_ml/           # Core package (stages, reporting, config)
+├── app/                    # Streamlit multipage dashboard
+├── manuscript/           # Markdown / LaTeX report sources (tracked)
+├── DATASET_ieee-cis-elliptic/   # Place Kaggle data here (gitignored — see README inside)
+├── processed_data/         # Generated CSVs/JSON (gitignored)
+└── figures/                # PNG figures from pipeline (gitignored)
+```
+
+**Naming:** **`manuscript/`** = your written report (Markdown/LaTeX). **`figures/`** = auto-generated pipeline plots. No more `REPORT/` vs `reports/` overlap.
 
 ---
 
 ## Requirements
 
-Use **one** Python version for the whole project so **TensorFlow** (stage 3) and wheels line up.
-
 | | |
 |--|--|
-| **Recommended** | **Python 3.11.x** (64-bit) |
-| **Supported** | **3.10.x** and **3.12.x** |
-| **Avoid** | **3.13+** (TensorFlow / wheels may be missing or incomplete) |
-
-The repo includes **`.python-version`** (`3.11`) for pyenv and similar tools. `requires-python` in `pyproject.toml` is `>=3.10,<3.13`.
+| **Python** | **3.10.x – 3.12.x** (recommended: **3.11**) |
+| **Avoid** | **3.13+** for full TensorFlow wheels |
+| **Disk** | Enough space for IEEE + Elliptic CSVs and processed outputs |
+| **GPU** | Not required (CPU training is supported) |
 
 ---
 
 ## Quick start
 
-From the **repository root** (the folder that contains `main.py`, `src/`, and `app/`):
+```bash
+git clone https://github.com/YOUR_USER/YOUR_REPO.git
+cd YOUR_REPO
 
-**Windows (example):**
+python -m venv .venv
+# Windows: .\.venv\Scripts\activate
+# macOS/Linux: source .venv/bin/activate
 
-```powershell
-py -3.11 -m venv .venv
-.\.venv\Scripts\activate
 python -m pip install --upgrade pip
 pip install -r requirements.txt
-```
-
-**macOS / Linux:**
-
-```bash
-python3.11 -m venv .venv
-source .venv/bin/activate
-pip install -r requirements.txt
-```
-
-Optional editable install so `fraud_ml` is importable from anywhere:
-
-```bash
 pip install -e .
 ```
 
----
-
-## Run the pipeline
-
-With the virtual environment **activated**, from the repository root:
+Run the full pipeline (stages **1–5**; Stage 5 needs **PyTorch** for GCN metrics):
 
 ```bash
 python main.py
 ```
 
-Run a single stage:
+IEEE-only through fusion (skip Elliptic graph stage):
 
 ```bash
-python main.py --stage 2
+python main.py --skip-elliptic-graph
 ```
 
-Skip writing figures (faster / headless):
-
-```bash
-python main.py --no-plots
-```
-
-After `pip install -e .` you can also use:
-
-```bash
-python -m fraud_ml.pipeline.run_all
-```
-
-| Stage | Module | Main outputs (under `processed_data/`) |
-|-------|--------|----------------------------------------|
-| 1 | `fraud_ml.pipeline.stage01_data` | Cleaned IEEE + Elliptic CSVs, `preprocessing_config.json` |
-| 2 | `fraud_ml.pipeline.stage02_gbdt` | `gbdt_preds.csv` |
-| 3 | `fraud_ml.pipeline.stage03_deep_anomaly` | `hybrid_dnn_anomaly_preds.csv` |
-| 4 | `fraud_ml.pipeline.stage04_fusion` | `final_hybrid_comparison_metrics.csv`, `final_hybrid_scores.csv`, `final_hybrid_threshold.txt` |
-
-Figures go to `reports/figures/` when plotting is enabled.
+**GCN:** install PyTorch, then `python main.py --stage 5` (or full `main.py`).
 
 ---
 
-## Streamlit dashboard
+## Datasets
 
-After installing dependencies (includes **Streamlit** and **Plotly**), from the repository root:
+Download and place files under **`DATASET_ieee-cis-elliptic/`** as described in:
+
+**[`DATASET_ieee-cis-elliptic/README.md`](DATASET_ieee-cis-elliptic/README.md)**
+
+- **IEEE-CIS Fraud Detection** — [Kaggle](https://www.kaggle.com/c/ieee-fraud-detection/data)  
+- **Elliptic Data Set** — [Kaggle](https://www.kaggle.com/datasets/ellipticco/elliptic-data-set)
+
+This directory is **gitignored**; reviewers clone the repo and add data locally.
+
+---
+
+## Pipeline (stages 1–5)
+
+| Stage | Module | Main outputs (`processed_data/`) |
+|-------|--------|----------------------------------|
+| 1 | `stage01_data` | Cleaned IEEE/Elliptic CSVs, `preprocessing_config.json` |
+| 2 | `stage02_gbdt` | `gbdt_preds.csv`, optional SHAP figure, experiment config |
+| 3 | `stage03_deep_anomaly` | `hybrid_dnn_anomaly_preds.csv`, DNN baseline metrics |
+| 4 | `stage04_fusion` | `final_hybrid_*.csv`, threshold, `report_table_*.csv` |
+| 5 | `stage05_elliptic_graph` | `elliptic_graph_experiments.csv` (GCN + tabular baselines) |
+
+Figures go to **`figures/`** when plotting is enabled.
+
+---
+
+## Command-line options
+
+```bash
+python main.py --help
+```
+
+| Flag | Purpose |
+|------|---------|
+| `--stage N` | Run only stage `1`–`5` |
+| `--no-plots` | Skip saving figures |
+| `--skip-elliptic-graph` | Run stages 1–4 only |
+| `--split temporal` | Time-ordered splits where applicable (IEEE `TransactionDT`, fusion) |
+| `--smote` | SMOTE on IEEE training matrix (stage 2) |
+| `--tune-gbdt` | Randomized search on LightGBM (stage 2) |
+
+Module equivalent: `python -m fraud_ml.pipeline.run_all` (same flags via `run_all`).
+
+---
+
+## Dashboard
 
 ```bash
 python -m streamlit run app/app.py
 ```
 
-On Windows, `python -m streamlit` avoids relying on `streamlit` being on `PATH`. You can also run **`run_dashboard.bat`** after dependencies are installed.
-
 | Page | Role |
 |------|------|
-| **Home** (`app.py`) | Overview, KPIs, pipeline summary |
-| **1 Overview** | Presentation-style landing |
-| **2 Dataset & Preprocessing** | Stage 1 · `processed_data/`, `preprocessing_config.json`, missingness |
-| **3 EDA** | Figures under `reports/figures/` |
-| **4 GBDT & Baselines** | Stage 2 · `gbdt_preds.csv` |
-| **5 Deep & Anomaly** | Stage 3 · `hybrid_dnn_anomaly_preds.csv` |
-| **6 Fusion & Final Results** | Stage 4 · `final_hybrid_*.csv`, threshold |
-| **7 Reports & Documents** | `README.md`, `REPORT/*.md`, PDFs, `Lit_Review/`, `Ref/` |
-| **8 Run Pipeline** | Optional subprocess of `python main.py` |
+| Home / Overview | KPIs, timeline |
+| 2–3 | Data, EDA |
+| 4–6 | GBDT, Deep/Anomaly, Fusion + **report tables** |
+| 7 | Documents |
+| 8 | Run pipeline (subprocess) |
+| 9 | Elliptic graph results |
 
-The app reads artifacts by default; it does not retrain unless you use **Run Pipeline**. See `app/README.md` for layout and extension notes.
+On Windows, `run_dashboard.bat` runs Streamlit from the project folder.
 
 ---
 
-## Data layout
+## Outputs & report tables
 
-Download or place datasets under **`DATASET_ieee-cis-elliptic/`**, for example:
+After Stage 4 (and optional Stage 5):
 
-- `ieee-fraud-detection/` (IEEE-CIS)
-- `elliptic-dataset/elliptic_bitcoin_dataset/` (Elliptic)
+- **`final_hybrid_comparison_metrics.csv`**, **`final_hybrid_scores.csv`**, **`final_hybrid_threshold.txt`**
+- **`report_table_1_ieee_cis.csv`**, **`report_table_2_elliptic.csv`**, **`report_table_3_ablation.csv`**
+- **`elliptic_graph_experiments.csv`** (Stage 5)
 
-Each data folder may include its own `README.md` describing expected files.
-
----
-
-## Outputs
-
-| Kind | Location |
-|------|----------|
-| Processed tables | `processed_data/*.csv` |
-| Figures | `reports/figures/*.png` |
-| Final metrics / scores | `processed_data/final_hybrid_comparison_metrics.csv`, `final_hybrid_scores.csv` |
-| Report sources | `REPORT/` |
+Additional write-ups live under **`manuscript/`** (Markdown / LaTeX).
 
 ---
 
-## Reports
+## Methodology notes
 
-- `REPORT/Dataset_Overview_Report.md`
-- `REPORT/Methodology_Draft.md`
-- `REPORT/Results_Summary.md`
-- `REPORT/Conclusion_and_Future_Scope.md`
-- `REPORT/main.tex`
+Optional experiments (SMOTE, temporal split, SHAP, tuning, plain MLP vs attention, GCN) are implemented in code; enable them with the CLI flags above. The **fusion** step still uses the **attention DNN** branch for IEEE scores unless you change `stage04`. **FraudGT-style** and **GNN** rows refer to implemented baselines (deep MLP / 2-layer GCN), not third-party proprietary systems.
+
+| Report claim | Code / flag |
+|--------------|-------------|
+| GNN on Elliptic | Stage 5 GCN (`pip install torch`) |
+| DNN without attention | Stage 3 plain MLP + `stage03_ieee_dnn_baselines.csv` |
+| FraudGT-style baseline | Stage 5 deep MLP on Elliptic |
+| SMOTE | `--smote` |
+| SHAP | Stage 2 → `figures/stage02_shap_summary.png` |
+| Temporal split | `--split temporal` |
+| GBDT tuning | `--tune-gbdt` |
 
 ---
 
-## Git: what to track
+## Pushing to GitHub
 
-**Usually committed:** `src/fraud_ml/`, `app/`, `main.py`, `requirements.txt`, `pyproject.toml`, `README.md`, `REPORT/*.md`, `REPORT/main.tex`, `.gitignore`, `.gitattributes`, `.streamlit/config.toml`, `.python-version`, and **README placeholders** under `DATASET_ieee-cis-elliptic/`, `processed_data/`, `reports/figures/`, `Lit_Review/`.
+1. **Verify** nothing huge is tracked:
 
-**Usually not committed (large or machine-local):** raw CSVs under `DATASET_ieee-cis-elliptic/`, generated files in `processed_data/`, plot PNGs in `reports/figures/`, and PDFs in `Lit_Review/`, `REPORT/`, `Ref/`, and root `ML_Report.pdf`. See each folder’s `README.md` for what to add locally after cloning.
+   ```bash
+   git status
+   git ls-files | findstr /I "\.csv"   # Windows; should NOT list dataset/processed paths if ignored
+   ```
 
-**First push (from repo root):**
+2. If data was accidentally committed:
 
-```bash
-git init
-git add .
-git status   # confirm no huge CSVs/PDFs are staged
-git commit -m "Initial commit: fraud detection pipeline and dashboard"
-git branch -M main
-git remote add origin https://github.com/YOUR_USER/YOUR_REPO.git
-git push -u origin main
-```
+   ```bash
+   git rm -r --cached DATASET_ieee-cis-elliptic/ processed_data/ figures/ 2>nul
+   git commit -m "Stop tracking data and generated outputs"
+   ```
 
-If large files were committed before updating `.gitignore`, remove them from the index (local files stay):
+3. **First push:**
 
-```bash
-git rm -r --cached DATASET_ieee-cis-elliptic/ processed_data/ reports/figures/ 2>nul
-git commit -m "Stop tracking data and generated outputs"
-```
+   ```bash
+   git init
+   git add .
+   git status
+   git commit -m "Initial commit: fraud detection pipeline and dashboard"
+   git branch -M main
+   git remote add origin https://github.com/YOUR_USER/YOUR_REPO.git
+   git push -u origin main
+   ```
 
-On macOS/Linux use `2>/dev/null` instead of `2>nul` in the last command if needed.
+See **`docs/SUBMISSION_CHECKLIST.md`** before submitting to a course.
+
+---
+
+## License
+
+This project is released under the **MIT License** — see [`LICENSE`](LICENSE).
+
+Dataset files from Kaggle remain subject to their **respective licenses**; this repo does not redistribute them.
+
+---
+
+## Acknowledgments
+
+- **IEEE-CIS Fraud Detection** and **Elliptic** datasets via Kaggle / original publishers.  
+- Stack: **scikit-learn**, **LightGBM** / **XGBoost**, **TensorFlow**, **PyTorch** (optional GCN), **Streamlit**, **SHAP**, **imbalanced-learn**.

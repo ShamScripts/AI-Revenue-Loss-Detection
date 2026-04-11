@@ -29,7 +29,7 @@ if readme.is_file():
 else:
     st.warning("README.md not found.")
 
-st.markdown("### REPORT / write-up (Markdown)")
+st.markdown("### Manuscript / write-up (Markdown)")
 report_dir = fu.report_docs_dir()
 md_files = sorted(report_dir.glob("*.md")) if report_dir.is_dir() else []
 for p in md_files:
@@ -37,7 +37,7 @@ for p in md_files:
         st.download_button(f"Download {p.name}", data=p.read_bytes(), file_name=p.name, key=f"dl_{p.name}")
         st.markdown(p.read_text(encoding="utf-8", errors="replace")[:6000] + ("…" if p.stat().st_size > 6000 else ""))
 
-st.markdown("### PDFs (project root, REPORT, Lit_Review)")
+st.markdown("### PDFs (project root, manuscript/, Lit_Review/)")
 all_pdfs = []
 for folder in [root, fu.report_docs_dir(), fu.lit_review_dir()]:
     if folder.is_dir():

@@ -1,9 +1,11 @@
-"""Stage 3: attention DNN + Isolation Forest; write hybrid_dnn_anomaly_preds.csv."""
+"""Stage 3: attention DNN + plain MLP baseline + Isolation Forest; write hybrid_dnn_anomaly_preds.csv."""
 
 from __future__ import annotations
 
+import json
 import warnings
 from pathlib import Path
+from typing import Any
 
 import matplotlib
 
@@ -15,11 +17,11 @@ import seaborn as sns
 from sklearn.ensemble import IsolationForest
 from sklearn.impute import SimpleImputer
 from sklearn.metrics import classification_report, confusion_matrix, ConfusionMatrixDisplay, roc_auc_score
-from sklearn.model_selection import train_test_split
 from sklearn.neural_network import MLPClassifier
 from sklearn.preprocessing import MinMaxScaler, StandardScaler
 
 from fraud_ml.config.paths import get_paths
+from fraud_ml.pipeline.split_utils import SplitMode, ieee_train_valid_arrays
 
 warnings.filterwarnings("ignore")
 sns.set_theme(style="whitegrid")
@@ -27,11 +29,16 @@ RANDOM_STATE = 42
 TARGET_COL = "isFraud"
 
 
-def run(project_root: Path | None = None, save_plots: bool = True) -> None:
+def run(
+    project_root: Path | None = None,
+    save_plots: bool = True,
+    *,
+    split_mode: SplitMode = "random",
+) -> None:
     paths = get_paths(project_root)
     project_root = paths.root
     processed_dir = paths.processed_dir
-    figures_dir = paths.reports_figures
+    figures_dir = paths.figures
 
     ieee_candidates = [
         processed_dir / "ieee_train_eda_ready.csv",
@@ -92,8 +99,8 @@ def run(project_root: Path | None = None, save_plots: bool = True) -> None:
     print("Numeric feature matrix:", X_num.shape)
     print("Fraud ratio:", y.mean())
 
-    X_train, X_valid, y_train, y_valid, ids_train, ids_valid = train_test_split(
-        X_num, y, ids_all, test_size=0.2, random_state=RANDOM_STATE, stratify=y
+    X_train, X_valid, y_train, y_valid, ids_train, ids_valid = ieee_train_valid_arrays(
+        df_model, X_num, pd.Series(y), split_mode=split_mode, test_size=0.2
     )
 
     imputer = SimpleImputer(strategy="median")
@@ -143,6 +150,22 @@ def run(project_root: Path | None = None, save_plots: bool = True) -> None:
             )
             return model
 
+        def build_plain_mlp(n_features: int, dropout: float = 0.2):
+            """Same depth/width as attention trunk but no MultiHeadAttention (tabular MLP baseline)."""
+            inp = layers.Input(shape=(n_features,), name="features_plain")
+            x = layers.Dense(128, activation="relu")(inp)
+            x = layers.Dropout(dropout)(x)
+            x = layers.Dense(64, activation="relu")(x)
+            x = layers.Dropout(dropout)(x)
+            out = layers.Dense(1, activation="sigmoid", name="fraud_prob_plain")(x)
+            model = Model(inputs=inp, outputs=out)
+            model.compile(
+                optimizer=tf.keras.optimizers.Adam(learning_rate=1e-3),
+                loss="binary_crossentropy",
+                metrics=[tf.keras.metrics.AUC(name="auc")],
+            )
+            return model
+
         dnn_model = build_attention_dnn(n_features=n_features)
         dnn_model.summary()
 
@@ -172,9 +195,42 @@ def run(project_root: Path | None = None, save_plots: bool = True) -> None:
             plt.savefig(figures_dir / "stage03_dnn_auc.png", dpi=120, bbox_inches="tight")
         plt.close()
 
+        plain_model = build_plain_mlp(n_features=n_features)
+        early_stop_p = callbacks.EarlyStopping(
+            monitor="val_auc", mode="max", patience=5, restore_best_weights=True, verbose=1
+        )
+        history_p = plain_model.fit(
+            X_train_scaled,
+            y_train,
+            validation_data=(X_valid_scaled, y_valid),
+            epochs=40,
+            batch_size=1024,
+            callbacks=[early_stop_p],
+            verbose=1,
+        )
+        plt.figure(figsize=(10, 4))
+        plt.plot(history_p.history["auc"], label="train_auc")
+        plt.plot(history_p.history["val_auc"], label="val_auc")
+        plt.title("Plain MLP (no attention) AUC by epoch")
+        plt.xlabel("Epoch")
+        plt.ylabel("AUC")
+        plt.legend()
+        plt.tight_layout()
+        if save_plots:
+            plt.savefig(figures_dir / "stage03_plain_mlp_auc.png", dpi=120, bbox_inches="tight")
+        plt.close()
+
         dnn_valid_proba = dnn_model.predict(X_valid_scaled, verbose=0).ravel()
         dnn_all_proba = dnn_model.predict(X_all_scaled, verbose=0).ravel()
+        plain_valid_auc = roc_auc_score(y_valid, plain_model.predict(X_valid_scaled, verbose=0).ravel())
+        plain_all_proba = plain_model.predict(X_all_scaled, verbose=0).ravel()
         dnn_label = "Attention-DNN (TensorFlow)"
+        baseline_rows: list[dict[str, Any]] = [
+            {"model": "Attention DNN", "split": split_mode, "val_roc_auc": float(roc_auc_score(y_valid, dnn_valid_proba))},
+            {"model": "Plain MLP (no attention)", "split": split_mode, "val_roc_auc": float(plain_valid_auc)},
+        ]
+        pd.DataFrame(baseline_rows).to_csv(processed_dir / "stage03_ieee_dnn_baselines.csv", index=False)
+        print("Saved:", processed_dir / "stage03_ieee_dnn_baselines.csv")
     except (ImportError, OSError) as e:
         print(
             "TensorFlow not installed or incompatible with this Python version; "
@@ -211,6 +267,20 @@ def run(project_root: Path | None = None, save_plots: bool = True) -> None:
         dnn_valid_proba = mlp.predict_proba(X_valid_scaled)[:, 1]
         dnn_all_proba = mlp.predict_proba(X_all_scaled)[:, 1]
         dnn_label = "MLPClassifier (sklearn fallback)"
+        pd.DataFrame(
+            [
+                {
+                    "model": "MLPClassifier (sklearn fallback; no TF attention path)",
+                    "split": split_mode,
+                    "val_roc_auc": float(roc_auc_score(y_valid, dnn_valid_proba)),
+                }
+            ]
+        ).to_csv(processed_dir / "stage03_ieee_dnn_baselines.csv", index=False)
+
+    (processed_dir / "stage03_experiment_config.json").write_text(
+        json.dumps({"split_mode": split_mode, "stage": 3}, indent=2),
+        encoding="utf-8",
+    )
 
     dnn_auc = roc_auc_score(y_valid, dnn_valid_proba)
     print(f"{dnn_label} — Validation ROC-AUC: {dnn_auc:.4f}")
@@ -265,6 +335,8 @@ def run(project_root: Path | None = None, save_plots: bool = True) -> None:
     )
     if id_col is not None:
         hybrid_df.insert(0, "TransactionID", ids_all.values)
+    if "TransactionDT" in df_model.columns:
+        hybrid_df["TransactionDT"] = df_model["TransactionDT"].values
 
     hybrid_out_path = processed_dir / "hybrid_dnn_anomaly_preds.csv"
     processed_dir.mkdir(parents=True, exist_ok=True)
